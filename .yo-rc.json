@@ -42,6 +42,7 @@
     "clientPackageManager": "npm",
     "clientThemeVariant": "",
     "languages": ["en", "fr"],
-    "enableGradleEnterprise": false
+    "enableGradleEnterprise": false,
+    "entities": ["MaprRequests"]
   }
 }

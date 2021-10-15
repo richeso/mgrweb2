@@ -2,9 +2,11 @@ package com.mapr.mgrweb.config;
 
 import com.mapr.mgrweb.security.*;
 import com.mapr.mgrweb.security.jwt.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -30,6 +32,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private final CorsFilter corsFilter;
     private final SecurityProblemSupport problemSupport;
+
+    @Autowired
+    private CustomAuthenticationProvider authProvider;
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(authProvider);
+    }
 
     public SecurityConfiguration(
         TokenProvider tokenProvider,
