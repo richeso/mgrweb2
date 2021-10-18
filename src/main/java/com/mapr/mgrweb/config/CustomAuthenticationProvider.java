@@ -1,9 +1,16 @@
 package com.mapr.mgrweb.config;
 
+import com.mapr.mgrweb.domain.Authority;
+import com.mapr.mgrweb.domain.User;
+import com.mapr.mgrweb.security.AuthoritiesConstants;
+import com.mapr.mgrweb.service.UserService;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,6 +26,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private static final Logger log = LoggerFactory.getLogger(CustomAuthenticationProvider.class);
 
+    @Autowired
+    private UserService userService;
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         try {
@@ -28,10 +38,29 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             String username = authentication.getName();
             String password = authentication.getCredentials().toString();
             boolean isAuthenticated = pamAuthentication(username, password);
+
+            User user = userService.getUserWithAuthoritiesByLogin(username).orElse(user = null);
+
             if (isAuthenticated) {
+                if (user == null) {
+                    // Auto Register User - later -- for now throw exception
+                    throw new BadCredentialsException("Invalid username or password");
+                }
+
                 List<GrantedAuthority> grantedAuths = new ArrayList<>();
-                grantedAuths.add(new SimpleGrantedAuthority("ROLE_USER"));
-                return new UsernamePasswordAuthenticationToken(username, password, grantedAuths);
+                for (Authority authority : user.getAuthorities()) grantedAuths.add(new SimpleGrantedAuthority(authority.getName()));
+
+                UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                    user.getLogin(),
+                    authentication.getCredentials(),
+                    grantedAuths
+                );
+                token.setDetails(authentication.getDetails());
+
+                //List<GrantedAuthority> grantedAuths = new ArrayList<>();
+                //grantedAuths.add(new SimpleGrantedAuthority(AuthoritiesConstants.ADMIN));
+                //return new UsernamePasswordAuthenticationToken(username, password, grantedAuths);
+                return token;
             } else {
                 throw new BadCredentialsException("Invalid username or password");
             }
