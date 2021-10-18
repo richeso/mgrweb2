@@ -94,7 +94,7 @@ public class UserMapper {
             return null;
         }
         UserDTO userDto = new UserDTO();
-        userDto.setId(user.getId());
+        userDto.setId(user.get_id());
         return userDto;
     }
 
@@ -123,7 +123,7 @@ public class UserMapper {
             return null;
         }
         UserDTO userDto = new UserDTO();
-        userDto.setId(user.getId());
+        userDto.setId(user.get_id());
         userDto.setLogin(user.getLogin());
         return userDto;
     }

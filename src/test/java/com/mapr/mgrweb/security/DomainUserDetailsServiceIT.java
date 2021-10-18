@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.mapr.mgrweb.IntegrationTest;
 import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.repository.UserRepository;
+import com.mapr.mgrweb.repository.MapRUserRepository;
 import java.util.Locale;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +28,7 @@ class DomainUserDetailsServiceIT {
     private static final String USER_THREE_EMAIL = "test-user-three@localhost";
 
     @Autowired
-    private UserRepository userRepository;
+    private MapRUserRepository userRepository;
 
     @Autowired
     private UserDetailsService domainUserDetailsService;

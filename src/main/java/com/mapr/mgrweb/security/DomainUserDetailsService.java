@@ -1,8 +1,9 @@
 package com.mapr.mgrweb.security;
 
 import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.repository.UserRepository;
-import java.util.*;
+import com.mapr.mgrweb.repository.MapRUserRepository;
+import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator;
 import org.slf4j.Logger;
@@ -22,9 +23,9 @@ public class DomainUserDetailsService implements UserDetailsService {
 
     private final Logger log = LoggerFactory.getLogger(DomainUserDetailsService.class);
 
-    private final UserRepository userRepository;
+    private final MapRUserRepository userRepository;
 
-    public DomainUserDetailsService(UserRepository userRepository) {
+    public DomainUserDetailsService(MapRUserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -47,7 +48,7 @@ public class DomainUserDetailsService implements UserDetailsService {
     }
 
     private org.springframework.security.core.userdetails.User createSpringSecurityUser(String lowercaseLogin, User user) {
-        if (!user.isActivated()) {
+        if (!user.getActivated()) {
             throw new UserNotActivatedException("User " + lowercaseLogin + " was not activated");
         }
         List<GrantedAuthority> grantedAuthorities = user

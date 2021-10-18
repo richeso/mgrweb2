@@ -38,6 +38,8 @@ public class MgrwebApp {
      */
     @PostConstruct
     public void initApplication() {
+        System.setProperty("fs.mapr.bailout.on.library.mismatch", "false");
+        //        log.info(System.getProperty("fs.mapr.bailout.on.library.mismatch"));
         Collection<String> activeProfiles = Arrays.asList(env.getActiveProfiles());
         if (
             activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) &&

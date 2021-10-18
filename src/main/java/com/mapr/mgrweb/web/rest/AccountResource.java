@@ -1,7 +1,7 @@
 package com.mapr.mgrweb.web.rest;
 
 import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.repository.UserRepository;
+import com.mapr.mgrweb.repository.MapRUserRepository;
 import com.mapr.mgrweb.security.SecurityUtils;
 import com.mapr.mgrweb.service.MailService;
 import com.mapr.mgrweb.service.UserService;
@@ -35,13 +35,13 @@ public class AccountResource {
 
     private final Logger log = LoggerFactory.getLogger(AccountResource.class);
 
-    private final UserRepository userRepository;
+    private final MapRUserRepository userRepository;
 
     private final UserService userService;
 
     private final MailService mailService;
 
-    public AccountResource(UserRepository userRepository, UserService userService, MailService mailService) {
+    public AccountResource(MapRUserRepository userRepository, UserService userService, MailService mailService) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.mailService = mailService;

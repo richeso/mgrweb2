@@ -1,7 +1,10 @@
 package com.mapr.mgrweb.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.mapr.mgrweb.repository.MapRDBEntity;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.UUID;
 import javax.validation.constraints.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -10,8 +13,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 /**
  * A MaprRequests.
  */
-@Document(collection = "mapr_requests")
-public class MaprRequests implements Serializable {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class MaprRequests extends AbstractAuditingEntity implements Serializable, MapRDBEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -67,8 +70,21 @@ public class MaprRequests implements Serializable {
         return this;
     }
 
+    public void initNewId() {
+        setId(UUID.randomUUID().toString());
+    }
+
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String get_id() {
+        return id;
+    }
+
+    @Override
+    public void set_id(String _id) {
+        this.id = _id;
     }
 
     public String getType() {

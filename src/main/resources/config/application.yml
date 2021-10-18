@@ -64,10 +64,6 @@ management:
           autotime:
             enabled: true
 
-mongock:
-  change-logs-scan-package:
-    - com.mapr.mgrweb.config.dbmigrations
-
 spring:
   application:
     name: mgrweb
@@ -163,3 +159,11 @@ api:
   host:
     pam: http://localhost:8090
     mapr: https://demo.mapr.com:8443/rest
+
+mapr:
+  tables:
+    customer: /user/msapp/customerMap
+    usersTable: /user/msapp/users
+    authoritiesTable: /user/msapp/authorities
+    auditeEventsTable: /user/msapp/audit
+    maprRequests: /user/msapp/maprRequests

@@ -1,20 +1,11 @@
 package com.mapr.mgrweb.config.dbmigrations;
 
-import com.github.cloudyrock.mongock.ChangeLog;
-import com.github.cloudyrock.mongock.ChangeSet;
-import com.github.cloudyrock.mongock.driver.mongodb.springdata.v3.decorator.impl.MongockTemplate;
-import com.mapr.mgrweb.config.Constants;
-import com.mapr.mgrweb.domain.Authority;
-import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.security.AuthoritiesConstants;
-import java.time.Instant;
-
 /**
  * Creates the initial database setup.
  */
-@ChangeLog(order = "001")
+// @ChangeLog(order = "001")
 public class InitialSetupMigration {
-
+    /*
     @ChangeSet(order = "01", author = "initiator", id = "01-addAuthorities")
     public void addAuthorities(MongockTemplate mongoTemplate) {
         Authority adminAuthority = new Authority();
@@ -61,4 +52,5 @@ public class InitialSetupMigration {
         userUser.getAuthorities().add(userAuthority);
         mongoTemplate.save(userUser);
     }
+    */
 }

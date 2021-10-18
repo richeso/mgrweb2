@@ -2,23 +2,26 @@ package com.mapr.mgrweb.web.rest;
 
 import static com.mapr.mgrweb.web.rest.AccountResourceIT.TEST_USER_LOGIN;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.mapr.mgrweb.IntegrationTest;
 import com.mapr.mgrweb.config.Constants;
 import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.repository.AuthorityRepository;
-import com.mapr.mgrweb.repository.UserRepository;
+import com.mapr.mgrweb.repository.MapRDBAuthorityRepository;
+import com.mapr.mgrweb.repository.MapRUserRepository;
 import com.mapr.mgrweb.security.AuthoritiesConstants;
 import com.mapr.mgrweb.service.UserService;
-import com.mapr.mgrweb.service.dto.AdminUserDTO;
 import com.mapr.mgrweb.service.dto.PasswordChangeDTO;
 import com.mapr.mgrweb.service.dto.UserDTO;
 import com.mapr.mgrweb.web.rest.vm.KeyAndPasswordVM;
 import com.mapr.mgrweb.web.rest.vm.ManagedUserVM;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,10 +43,10 @@ class AccountResourceIT {
     static final String TEST_USER_LOGIN = "test";
 
     @Autowired
-    private UserRepository userRepository;
+    private MapRUserRepository userRepository;
 
     @Autowired
-    private AuthorityRepository authorityRepository;
+    private MapRDBAuthorityRepository authorityRepository;
 
     @Autowired
     private UserService userService;
@@ -88,7 +91,7 @@ class AccountResourceIT {
         Set<String> authorities = new HashSet<>();
         authorities.add(AuthoritiesConstants.ADMIN);
 
-        AdminUserDTO user = new AdminUserDTO();
+        UserDTO user = new UserDTO();
         user.setLogin(TEST_USER_LOGIN);
         user.setFirstName("john");
         user.setLastName("doe");
@@ -340,7 +343,7 @@ class AccountResourceIT {
         assertThat(testUser4.get().getEmail()).isEqualTo("test-register-duplicate-email@example.com");
 
         testUser4.get().setActivated(true);
-        userService.updateUser((new AdminUserDTO(testUser4.get())));
+        userService.updateUser((new UserDTO(testUser4.get())));
 
         // Register 4th (already activated) user
         restAccountMockMvc
@@ -387,7 +390,7 @@ class AccountResourceIT {
         restAccountMockMvc.perform(get("/api/activate?key={activationKey}", activationKey)).andExpect(status().isOk());
 
         user = userRepository.findOneByLogin(user.getLogin()).orElse(null);
-        assertThat(user.isActivated()).isTrue();
+        assertThat(user.getActivated()).isTrue();
     }
 
     @Test
@@ -405,7 +408,7 @@ class AccountResourceIT {
         user.setActivated(true);
         userRepository.save(user);
 
-        AdminUserDTO userDTO = new AdminUserDTO();
+        UserDTO userDTO = new UserDTO();
         userDTO.setLogin("not-used");
         userDTO.setFirstName("firstname");
         userDTO.setLastName("lastname");
@@ -426,7 +429,7 @@ class AccountResourceIT {
         assertThat(updatedUser.getLangKey()).isEqualTo(userDTO.getLangKey());
         assertThat(updatedUser.getPassword()).isEqualTo(user.getPassword());
         assertThat(updatedUser.getImageUrl()).isEqualTo(userDTO.getImageUrl());
-        assertThat(updatedUser.isActivated()).isTrue();
+        assertThat(updatedUser.getActivated()).isTrue();
         assertThat(updatedUser.getAuthorities()).isEmpty();
     }
 
@@ -441,7 +444,7 @@ class AccountResourceIT {
 
         userRepository.save(user);
 
-        AdminUserDTO userDTO = new AdminUserDTO();
+        UserDTO userDTO = new UserDTO();
         userDTO.setLogin("not-used");
         userDTO.setFirstName("firstname");
         userDTO.setLastName("lastname");
@@ -476,7 +479,7 @@ class AccountResourceIT {
 
         userRepository.save(anotherUser);
 
-        AdminUserDTO userDTO = new AdminUserDTO();
+        UserDTO userDTO = new UserDTO();
         userDTO.setLogin("not-used");
         userDTO.setFirstName("firstname");
         userDTO.setLastName("lastname");
@@ -504,7 +507,7 @@ class AccountResourceIT {
         user.setActivated(true);
         userRepository.save(user);
 
-        AdminUserDTO userDTO = new AdminUserDTO();
+        UserDTO userDTO = new UserDTO();
         userDTO.setLogin("not-used");
         userDTO.setFirstName("firstname");
         userDTO.setLastName("lastname");

@@ -2,17 +2,18 @@ package com.mapr.mgrweb.web.rest;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.mapr.mgrweb.IntegrationTest;
 import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.repository.UserRepository;
+import com.mapr.mgrweb.repository.MapRUserRepository;
 import com.mapr.mgrweb.security.AuthoritiesConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,12 +29,21 @@ class PublicUserResourceIT {
     private static final String DEFAULT_LOGIN = "johndoe";
 
     @Autowired
-    private UserRepository userRepository;
+    private MapRUserRepository userRepository;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Autowired
     private MockMvc restUserMockMvc;
 
     private User user;
+
+    @BeforeEach
+    public void setup() {
+        cacheManager.getCache(MapRUserRepository.USERS_BY_LOGIN_CACHE).clear();
+        cacheManager.getCache(MapRUserRepository.USERS_BY_EMAIL_CACHE).clear();
+    }
 
     @BeforeEach
     public void initTest() {

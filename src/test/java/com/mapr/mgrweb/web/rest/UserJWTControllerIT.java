@@ -1,17 +1,12 @@
 package com.mapr.mgrweb.web.rest;
 
-import static org.hamcrest.Matchers.emptyString;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.mapr.mgrweb.IntegrationTest;
 import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.repository.UserRepository;
+import com.mapr.mgrweb.repository.MapRUserRepository;
 import com.mapr.mgrweb.web.rest.vm.LoginVM;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class UserJWTControllerIT {
 
     @Autowired
-    private UserRepository userRepository;
+    private MapRUserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;

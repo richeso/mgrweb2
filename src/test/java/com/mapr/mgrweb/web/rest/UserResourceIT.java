@@ -2,27 +2,30 @@ package com.mapr.mgrweb.web.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.mapr.mgrweb.IntegrationTest;
 import com.mapr.mgrweb.domain.Authority;
 import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.repository.UserRepository;
+import com.mapr.mgrweb.repository.MapRUserRepository;
 import com.mapr.mgrweb.security.AuthoritiesConstants;
 import com.mapr.mgrweb.service.dto.AdminUserDTO;
 import com.mapr.mgrweb.service.dto.UserDTO;
 import com.mapr.mgrweb.service.mapper.UserMapper;
 import com.mapr.mgrweb.web.rest.vm.ManagedUserVM;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -59,15 +62,24 @@ class UserResourceIT {
     private static final String UPDATED_LANGKEY = "fr";
 
     @Autowired
-    private UserRepository userRepository;
+    private MapRUserRepository userRepository;
 
     @Autowired
     private UserMapper userMapper;
 
     @Autowired
+    private CacheManager cacheManager;
+
+    @Autowired
     private MockMvc restUserMockMvc;
 
     private User user;
+
+    @BeforeEach
+    public void setup() {
+        cacheManager.getCache(MapRUserRepository.USERS_BY_LOGIN_CACHE).clear();
+        cacheManager.getCache(MapRUserRepository.USERS_BY_EMAIL_CACHE).clear();
+    }
 
     /**
      * Create a User.
@@ -91,7 +103,7 @@ class UserResourceIT {
     /**
      * Setups the database with one user.
      */
-    public static User initTestUser(UserRepository userRepository) {
+    public static User initTestUser(MapRUserRepository userRepository) {
         userRepository.deleteAll();
         User user = createEntity();
         return user;
@@ -243,6 +255,8 @@ class UserResourceIT {
         // Initialize the database
         userRepository.save(user);
 
+        assertThat(cacheManager.getCache(MapRUserRepository.USERS_BY_LOGIN_CACHE).get(user.getLogin())).isNull();
+
         // Get the user
         restUserMockMvc
             .perform(get("/api/admin/users/{login}", user.getLogin()))
@@ -254,6 +268,8 @@ class UserResourceIT {
             .andExpect(jsonPath("$.email").value(DEFAULT_EMAIL))
             .andExpect(jsonPath("$.imageUrl").value(DEFAULT_IMAGEURL))
             .andExpect(jsonPath("$.langKey").value(DEFAULT_LANGKEY));
+
+        assertThat(cacheManager.getCache(MapRUserRepository.USERS_BY_LOGIN_CACHE).get(user.getLogin())).isNotNull();
     }
 
     @Test
@@ -268,16 +284,16 @@ class UserResourceIT {
         int databaseSizeBeforeUpdate = userRepository.findAll().size();
 
         // Update the user
-        User updatedUser = userRepository.findById(user.getId()).get();
+        User updatedUser = userRepository.findById(user.get_id()).get();
 
         ManagedUserVM managedUserVM = new ManagedUserVM();
-        managedUserVM.setId(updatedUser.getId());
+        managedUserVM.setId(updatedUser.get_id());
         managedUserVM.setLogin(updatedUser.getLogin());
         managedUserVM.setPassword(UPDATED_PASSWORD);
         managedUserVM.setFirstName(UPDATED_FIRSTNAME);
         managedUserVM.setLastName(UPDATED_LASTNAME);
         managedUserVM.setEmail(UPDATED_EMAIL);
-        managedUserVM.setActivated(updatedUser.isActivated());
+        managedUserVM.setActivated(updatedUser.getActivated());
         managedUserVM.setImageUrl(UPDATED_IMAGEURL);
         managedUserVM.setLangKey(UPDATED_LANGKEY);
         managedUserVM.setCreatedBy(updatedUser.getCreatedBy());
@@ -295,7 +311,7 @@ class UserResourceIT {
         // Validate the User in the database
         assertPersistedUsers(users -> {
             assertThat(users).hasSize(databaseSizeBeforeUpdate);
-            User testUser = users.stream().filter(usr -> usr.getId().equals(updatedUser.getId())).findFirst().get();
+            User testUser = users.stream().filter(usr -> usr.get_id().equals(updatedUser.get_id())).findFirst().get();
             assertThat(testUser.getFirstName()).isEqualTo(UPDATED_FIRSTNAME);
             assertThat(testUser.getLastName()).isEqualTo(UPDATED_LASTNAME);
             assertThat(testUser.getEmail()).isEqualTo(UPDATED_EMAIL);
@@ -311,16 +327,16 @@ class UserResourceIT {
         int databaseSizeBeforeUpdate = userRepository.findAll().size();
 
         // Update the user
-        User updatedUser = userRepository.findById(user.getId()).get();
+        User updatedUser = userRepository.findById(user.get_id()).get();
 
         ManagedUserVM managedUserVM = new ManagedUserVM();
-        managedUserVM.setId(updatedUser.getId());
+        managedUserVM.setId(updatedUser.get_id());
         managedUserVM.setLogin(UPDATED_LOGIN);
         managedUserVM.setPassword(UPDATED_PASSWORD);
         managedUserVM.setFirstName(UPDATED_FIRSTNAME);
         managedUserVM.setLastName(UPDATED_LASTNAME);
         managedUserVM.setEmail(UPDATED_EMAIL);
-        managedUserVM.setActivated(updatedUser.isActivated());
+        managedUserVM.setActivated(updatedUser.getActivated());
         managedUserVM.setImageUrl(UPDATED_IMAGEURL);
         managedUserVM.setLangKey(UPDATED_LANGKEY);
         managedUserVM.setCreatedBy(updatedUser.getCreatedBy());
@@ -338,7 +354,7 @@ class UserResourceIT {
         // Validate the User in the database
         assertPersistedUsers(users -> {
             assertThat(users).hasSize(databaseSizeBeforeUpdate);
-            User testUser = users.stream().filter(usr -> usr.getId().equals(updatedUser.getId())).findFirst().get();
+            User testUser = users.stream().filter(usr -> usr.get_id().equals(updatedUser.get_id())).findFirst().get();
             assertThat(testUser.getLogin()).isEqualTo(UPDATED_LOGIN);
             assertThat(testUser.getFirstName()).isEqualTo(UPDATED_FIRSTNAME);
             assertThat(testUser.getLastName()).isEqualTo(UPDATED_LASTNAME);
@@ -365,16 +381,16 @@ class UserResourceIT {
         userRepository.save(anotherUser);
 
         // Update the user
-        User updatedUser = userRepository.findById(user.getId()).get();
+        User updatedUser = userRepository.findById(user.get_id()).get();
 
         ManagedUserVM managedUserVM = new ManagedUserVM();
-        managedUserVM.setId(updatedUser.getId());
+        managedUserVM.setId(updatedUser.get_id());
         managedUserVM.setLogin(updatedUser.getLogin());
         managedUserVM.setPassword(updatedUser.getPassword());
         managedUserVM.setFirstName(updatedUser.getFirstName());
         managedUserVM.setLastName(updatedUser.getLastName());
         managedUserVM.setEmail("jhipster@localhost"); // this email should already be used by anotherUser
-        managedUserVM.setActivated(updatedUser.isActivated());
+        managedUserVM.setActivated(updatedUser.getActivated());
         managedUserVM.setImageUrl(updatedUser.getImageUrl());
         managedUserVM.setLangKey(updatedUser.getLangKey());
         managedUserVM.setCreatedBy(updatedUser.getCreatedBy());
@@ -407,16 +423,16 @@ class UserResourceIT {
         userRepository.save(anotherUser);
 
         // Update the user
-        User updatedUser = userRepository.findById(user.getId()).get();
+        User updatedUser = userRepository.findById(user.get_id()).get();
 
         ManagedUserVM managedUserVM = new ManagedUserVM();
-        managedUserVM.setId(updatedUser.getId());
+        managedUserVM.setId(updatedUser.get_id());
         managedUserVM.setLogin("jhipster"); // this login should already be used by anotherUser
         managedUserVM.setPassword(updatedUser.getPassword());
         managedUserVM.setFirstName(updatedUser.getFirstName());
         managedUserVM.setLastName(updatedUser.getLastName());
         managedUserVM.setEmail(updatedUser.getEmail());
-        managedUserVM.setActivated(updatedUser.isActivated());
+        managedUserVM.setActivated(updatedUser.getActivated());
         managedUserVM.setImageUrl(updatedUser.getImageUrl());
         managedUserVM.setLangKey(updatedUser.getLangKey());
         managedUserVM.setCreatedBy(updatedUser.getCreatedBy());
@@ -443,6 +459,8 @@ class UserResourceIT {
             .perform(delete("/api/admin/users/{login}", user.getLogin()).accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 
+        assertThat(cacheManager.getCache(MapRUserRepository.USERS_BY_LOGIN_CACHE).get(user.getLogin())).isNull();
+
         // Validate the database is empty
         assertPersistedUsers(users -> assertThat(users).hasSize(databaseSizeBeforeDelete - 1));
     }
@@ -453,7 +471,7 @@ class UserResourceIT {
         User user1 = new User();
         user1.setId(DEFAULT_ID);
         User user2 = new User();
-        user2.setId(user1.getId());
+        user2.setId(user1.get_id());
         assertThat(user1).isEqualTo(user2);
         user2.setId("id2");
         assertThat(user1).isNotEqualTo(user2);
@@ -477,12 +495,12 @@ class UserResourceIT {
         userDTO.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
 
         User user = userMapper.userDTOToUser(userDTO);
-        assertThat(user.getId()).isEqualTo(DEFAULT_ID);
+        assertThat(user.get_id()).isEqualTo(DEFAULT_ID);
         assertThat(user.getLogin()).isEqualTo(DEFAULT_LOGIN);
         assertThat(user.getFirstName()).isEqualTo(DEFAULT_FIRSTNAME);
         assertThat(user.getLastName()).isEqualTo(DEFAULT_LASTNAME);
         assertThat(user.getEmail()).isEqualTo(DEFAULT_EMAIL);
-        assertThat(user.isActivated()).isTrue();
+        assertThat(user.getActivated()).isTrue();
         assertThat(user.getImageUrl()).isEqualTo(DEFAULT_IMAGEURL);
         assertThat(user.getLangKey()).isEqualTo(DEFAULT_LANGKEY);
         assertThat(user.getCreatedBy()).isNull();
@@ -505,7 +523,7 @@ class UserResourceIT {
         authorities.add(authority);
         user.setAuthorities(authorities);
 
-        AdminUserDTO userDTO = userMapper.userToAdminUserDTO(user);
+        UserDTO userDTO = userMapper.userToUserDTO(user);
 
         assertThat(userDTO.getId()).isEqualTo(DEFAULT_ID);
         assertThat(userDTO.getLogin()).isEqualTo(DEFAULT_LOGIN);

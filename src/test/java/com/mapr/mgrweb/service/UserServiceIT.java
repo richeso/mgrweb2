@@ -1,12 +1,11 @@
 package com.mapr.mgrweb.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import com.mapr.mgrweb.IntegrationTest;
-import com.mapr.mgrweb.config.Constants;
 import com.mapr.mgrweb.domain.User;
-import com.mapr.mgrweb.repository.UserRepository;
-import com.mapr.mgrweb.service.dto.AdminUserDTO;
+import com.mapr.mgrweb.repository.MapRUserRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -15,8 +14,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import tech.jhipster.security.RandomUtil;
 
 /**
@@ -38,7 +35,7 @@ class UserServiceIT {
     private static final String DEFAULT_LANGKEY = "dummy";
 
     @Autowired
-    private UserRepository userRepository;
+    private MapRUserRepository userRepository;
 
     @Autowired
     private UserService userService;
@@ -133,7 +130,9 @@ class UserServiceIT {
         Instant now = Instant.now();
         user.setActivated(false);
         user.setActivationKey(RandomStringUtils.random(20));
-        User dbUser = userRepository.save(user);
+        userRepository.save(user);
+        User dbUser = userRepository.findById(user.get_id()).orElse(fail("User was not Found: " + user.get_id()));
+
         dbUser.setCreatedDate(now.minus(4, ChronoUnit.DAYS));
         userRepository.save(user);
         Instant threeDaysAgo = now.minus(3, ChronoUnit.DAYS);
@@ -148,14 +147,16 @@ class UserServiceIT {
     void assertThatNotActivatedUsersWithNullActivationKeyCreatedBefore3DaysAreNotDeleted() {
         Instant now = Instant.now();
         user.setActivated(false);
-        User dbUser = userRepository.save(user);
+        userRepository.save(user);
+        User dbUser;
+        dbUser = userRepository.findById(user.get_id()).orElse(fail("User was not found: " + user.get_id()));
         dbUser.setCreatedDate(now.minus(4, ChronoUnit.DAYS));
         userRepository.save(user);
         Instant threeDaysAgo = now.minus(3, ChronoUnit.DAYS);
         List<User> users = userRepository.findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(threeDaysAgo);
         assertThat(users).isEmpty();
         userService.removeNotActivatedUsers();
-        Optional<User> maybeDbUser = userRepository.findById(dbUser.getId());
+        Optional<User> maybeDbUser = userRepository.findById(dbUser.get_id());
         assertThat(maybeDbUser).contains(dbUser);
     }
 }
